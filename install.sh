@@ -87,11 +87,49 @@ log "Linking starship config"
 backup_and_copy "$REPO_DIR/starship/starship.toml" "$HOME/.config/starship.toml"
 
 log "Linking Claude Code config"
-backup_and_copy "$REPO_DIR/claude/settings.json" "$HOME/.claude/settings.json"
-backup_and_copy "$REPO_DIR/claude/keybindings.json" "$HOME/.claude/keybindings.json"
-backup_and_copy "$REPO_DIR/claude/statusline.sh" "$HOME/.claude/statusline.sh"
-backup_and_copy "$REPO_DIR/claude/subagent-statusline.sh" "$HOME/.claude/subagent-statusline.sh"
-chmod +x "$HOME/.claude/statusline.sh" "$HOME/.claude/subagent-statusline.sh"
+# Installs into every CLAUDE_CONFIG_DIR account directory that already exists
+# (~/.claude plus any ~/.claude-<alias> set up via a `CLAUDE_CONFIG_DIR=... claude`
+# alias in zsh/.zshrc), so agents/commands/skills/rules are available under every
+# account, not just the default one.
+CLAUDE_DIRS=("$HOME/.claude")
+for d in "$HOME"/.claude-*; do
+	[ -d "$d" ] && CLAUDE_DIRS+=("$d")
+done
+
+for cdir in "${CLAUDE_DIRS[@]}"; do
+	log "  -> $cdir"
+	backup_and_copy "$REPO_DIR/claude/settings.json" "$cdir/settings.json"
+	backup_and_copy "$REPO_DIR/claude/keybindings.json" "$cdir/keybindings.json"
+	backup_and_copy "$REPO_DIR/claude/statusline.sh" "$cdir/statusline.sh"
+	backup_and_copy "$REPO_DIR/claude/subagent-statusline.sh" "$cdir/subagent-statusline.sh"
+	chmod +x "$cdir/statusline.sh" "$cdir/subagent-statusline.sh"
+
+	for kind in agents commands output-styles rules; do
+		[ -d "$REPO_DIR/claude/$kind" ] || continue
+		mkdir -p "$cdir/$kind"
+		for f in "$REPO_DIR/claude/$kind"/*; do
+			backup_and_copy "$f" "$cdir/$kind/$(basename "$f")"
+		done
+	done
+
+	if [ -d "$REPO_DIR/claude/skills" ]; then
+		mkdir -p "$cdir/skills"
+		for skill_dir in "$REPO_DIR/claude/skills"/*/; do
+			skill_name="$(basename "$skill_dir")"
+			mkdir -p "$cdir/skills/$skill_name"
+			cp -r "$skill_dir." "$cdir/skills/$skill_name/"
+		done
+		find "$cdir/skills" -path "*/scripts/*.sh" -exec chmod +x {} +
+	fi
+done
+
+if [ "$OS" = "Darwin" ]; then
+	log "Installing iTerm2"
+	[ -d "/Applications/iTerm.app" ] || install_packages --cask iterm2
+	log "Importing iTerm2 preferences"
+	defaults import com.googlecode.iterm2 "$REPO_DIR/iterm2/com.googlecode.iterm2.plist"
+	log "iTerm2 preferences imported — restart iTerm2 to pick them up"
+fi
 
 log "Writing ~/.gitconfig"
 if [ -e "$HOME/.gitconfig" ]; then
