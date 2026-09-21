@@ -13,6 +13,7 @@ My personal shell setup: zsh + [oh-my-zsh](https://ohmyz.sh/) + [starship](https
 | `claude/settings.json`, `keybindings.json`, `statusline.sh`, `subagent-statusline.sh` | every `CLAUDE_CONFIG_DIR` account dir found (`~/.claude`, `~/.claude-*`) |
 | `claude/agents/`, `commands/`, `output-styles/`, `rules/`, `skills/` | same account dirs — personal-default agents/commands/output-styles/rules/skills available in every project, unless a project defines its own |
 | `iterm2/com.googlecode.iterm2.plist` | imported into the `com.googlecode.iterm2` preferences domain (macOS only) |
+| `iterm2/Oxocarbon.itermcolors` | standalone copy of the iTerm2 color theme (import manually, not touched by `install.sh`) |
 
 `install.sh` **copies** these into place (it does not symlink), backing up any existing file at the destination as `<file>.bak.<timestamp>` first. Re-run it any time after pulling repo changes to re-apply them.
 
@@ -64,3 +65,5 @@ I run Claude Code under two accounts via shell aliases (`CLAUDE_CONFIG_DIR=~/.cl
 ## iTerm2 (macOS only)
 
 `iterm2/com.googlecode.iterm2.plist` is a `defaults export com.googlecode.iterm2` snapshot of my iTerm2 preferences (profiles, colors, key mappings). `install.sh` installs iTerm2 via Homebrew if it's missing and imports this file with `defaults import`; restart iTerm2 afterwards to pick it up. Skipped entirely on Linux — no terminal emulator to install there (e.g. on a headless cluster box).
+
+The theme is [Oxocarbon](https://github.com/nyoom-engineering/oxocarbon) with separate light/dark variants (P3 color space). It's already baked into the plist's Default profile; `iterm2/Oxocarbon.itermcolors` is the same palette as a standalone file for anyone who only wants the colors (iTerm2 → Settings → Profiles → Colors → Color Presets… → Import).
