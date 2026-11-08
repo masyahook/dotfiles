@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Builds a Herdr layout from ~/.config/herdr/layout.tsv: one workspace per line, each with a
+# "code" tab (nvim) and an "agents" tab (two Claude panes). Re-running skips existing workspaces.
+# layout.tsv columns (tab-separated): <label> <dir> [KEY=VALUE]
+# The optional third column sets an environment variable for every pane in that workspace.
+set -euo pipefail
+LAYOUT="${1:-$HOME/.config/herdr/layout.tsv}"
+[ -f "$LAYOUT" ] || { echo "no layout file: $LAYOUT" >&2; exit 1; }
+existing=$(herdr workspace list | jq -r '.result.workspaces[].label')
+
+while IFS=$'\t' read -r label dir var; do
+	[ -z "$label" ] || [ "${label:0:1}" = "#" ] && continue
+	dir="${dir/#\~/$HOME}"
+	if grep -qx "$label" <<<"$existing"; then echo "exists: $label"; continue; fi
+	env=()
+	[ -n "${var:-}" ] && env=(--env "${var/=\~/=$HOME}")
+
+	ws=$(herdr workspace create --cwd "$dir" --label "$label" ${env[@]+"${env[@]}"} --no-focus)
+	herdr tab rename "$(jq -r .result.tab.tab_id <<<"$ws")" code >/dev/null
+	herdr pane run "$(jq -r .result.root_pane.pane_id <<<"$ws")" nvim . >/dev/null
+
+	tab=$(herdr tab create --workspace "$(jq -r .result.workspace.workspace_id <<<"$ws")" \
+		--cwd "$dir" --label agents ${env[@]+"${env[@]}"})
+	pane=$(jq -r .result.root_pane.pane_id <<<"$tab")
+	p2=$(herdr pane split "$pane" --direction right --cwd "$dir" ${env[@]+"${env[@]}"} |
+		jq -r '.result.pane.pane_id // .result.pane_id')
+	herdr pane run "$pane" claude >/dev/null
+	herdr pane run "$p2" claude >/dev/null
+	echo "created: $label"
+done <"$LAYOUT"

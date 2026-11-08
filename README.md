@@ -1,12 +1,16 @@
 # dotfiles
 
-My personal shell setup: zsh + [oh-my-zsh](https://ohmyz.sh/) + [starship](https://starship.rs/) prompt + [mcfly](https://github.com/cantino/mcfly) history search + [eza](https://github.com/eza-community/eza) for `ls`, a simplified copy of my [Claude Code](https://claude.com/claude-code) settings (including personal agents/commands/skills/rules shared across projects), and my [iTerm2](https://iterm2.com/) preferences (macOS only).
+My personal shell setup: zsh + [oh-my-zsh](https://ohmyz.sh/) + [starship](https://starship.rs/) prompt + [mcfly](https://github.com/cantino/mcfly) history search + [eza](https://github.com/eza-community/eza) for `ls`, [tmux](https://github.com/tmux/tmux), [glow](https://github.com/charmbracelet/glow) for rendering Markdown, [lazygit](https://github.com/jesseduffield/lazygit), [Neovim](https://neovim.io/) with [LazyVim](https://www.lazyvim.org/), [herdr](https://herdr.dev/) for running coding agents side by side, a simplified copy of my [Claude Code](https://claude.com/claude-code) settings (including personal agents/commands/skills/rules shared across projects), and my [iTerm2](https://iterm2.com/) preferences (macOS only).
 
 ## Layout
 
 | Path | Installs to |
 |---|---|
 | `zsh/.zshrc` | `~/.zshrc` |
+| `zsh/.zshenv` | `~/.zshenv` (puts `~/.local/bin` on `PATH` before `.zshrc` runs) |
+| `tmux/.tmux.conf` | `~/.tmux.conf` |
+| `nvim/` | `~/.config/nvim/` (LazyVim starter) |
+| `bin/herdr-layout` | `~/.local/bin/herdr-layout` |
 | `starship/starship.toml` | `~/.config/starship.toml` |
 | `git/.gitconfig.template` | `~/.gitconfig` (rendered with your name/email) |
 | `env/.env.example` | `~/.env` (template — fill in your own keys) |
@@ -45,12 +49,13 @@ Uses `apt-get` for `zsh`/`git`/`curl`, and upstream install scripts for `starshi
 
 1. Installs `zsh`, `git`, `curl` via the system package manager
 2. Installs `oh-my-zsh` plus the `zsh-syntax-highlighting` and `zsh-autosuggestions` plugins
-3. Installs `starship`, `eza`, `mcfly` if not already present
-4. Copies `.zshrc` and `starship.toml` into place (backing up existing files)
+3. Installs `starship`, `eza`, `mcfly`, `tmux`, `ripgrep`, `fd`, `jq`, `neovim`, `herdr`, `gh`, `wget`, `uv`, `glow` and `lazygit` if not already present (on Linux, user-level tools go to `~/.local/bin`, so no sudo prompt)
+4. Copies `.zshrc`, `.zshenv`, `starship.toml`, `.tmux.conf`, the Neovim config and `bin/` scripts into place (backing up existing files), then installs the LazyVim plugins
 5. Copies the Claude Code config into every `CLAUDE_CONFIG_DIR` account directory it finds under `$HOME` (`~/.claude`, plus any `~/.claude-<alias>` from a `CLAUDE_CONFIG_DIR=... claude` shell alias) — settings, key bindings, status line scripts, and the personal agents/commands/output-styles/rules/skills
 6. On macOS: installs iTerm2 (if missing) and imports `iterm2/com.googlecode.iterm2.plist` into its preferences (restart iTerm2 to pick it up)
 7. Prompts for your git name/email and writes `~/.gitconfig` from the template (skipped if `~/.gitconfig` already exists)
-8. Copies `env/.env.example` to `~/.env` **only if `~/.env` doesn't already exist** — it will not touch or overwrite real secrets
+8. Installs herdr's Claude integration (session restore) and herdr's skill into `~/.claude`
+9. Copies `env/.env.example` to `~/.env` **only if `~/.env` doesn't already exist** — it will not touch or overwrite real secrets
 
 ## Secrets
 
@@ -61,6 +66,18 @@ Uses `apt-get` for `zsh`/`git`/`curl`, and upstream install scripts for `starshi
 `claude/` holds just the personal-preference pieces of a Claude Code setup — status line scripts, key bindings, top-level `settings.json`, and personal-default agents/commands/output-styles/rules/skills — not the full `~/.claude` directory (which also holds session history, caches, and other machine/account-specific state that isn't portable).
 
 I run Claude Code under two accounts via shell aliases (`CLAUDE_CONFIG_DIR=~/.claude-personal claude`, `CLAUDE_CONFIG_DIR=~/.claude-chairon claude`, see `zsh/.zshrc`), so `install.sh` installs the same `claude/` content into every `~/.claude*` directory it finds — a project's own `.claude/` (agents, commands, rules, skills) still takes precedence over these personal defaults when both define something with the same name.
+
+## herdr (agents side by side)
+
+[herdr](https://herdr.dev/) is a terminal multiplexer built for coding agents: a background server keeps every pane running after you disconnect, and a sidebar shows each agent's state (`working`, `blocked`, `done`). Run `herdr` to attach, `ctrl+b` then `q` to detach. Start with the mouse; `ctrl+b` then `?` lists keybindings. Don't run it inside tmux — both use `ctrl+b`.
+
+`herdr-layout` builds workspaces from `~/.config/herdr/layout.tsv` (not in this repo — it names your projects). One tab-separated line per workspace:
+
+```
+my-project	~/Developer/my-project
+```
+
+Each workspace gets a `code` tab (Neovim) and an `agents` tab (two Claude panes). An optional third column `KEY=VALUE` sets an environment variable for every pane in that workspace. Re-running skips workspaces that already exist.
 
 ## iTerm2 (macOS only)
 

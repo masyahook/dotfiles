@@ -92,3 +92,17 @@ eval "$(starship init zsh)"
 eval "$(mcfly init zsh)"
 
 export PATH="$HOME/.local/bin:$PATH"
+
+# Markdown viewer (glow)
+alias mdshow='glow'
+alias mdow='glow'
+
+# Short names for the personal Claude Code account
+alias clp='claude-personal'
+alias sonnet='clp --model sonnet'
+alias opus='clp --model opus'
+
+alias dev='cd ~/Developer'
+
+# Neovim as the default editor when installed
+command -v nvim >/dev/null && export EDITOR=nvim VISUAL=nvim
